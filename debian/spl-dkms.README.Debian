@@ -1,0 +1,17 @@
+SPL for Debian
+--------------
+
+This package builds the SPL and SPLAT binary kernel modules using DKMS.
+
+Provided that you have the kernel header packages installed, the kernel
+modules will be built for your running kernel and automatically rebuilt
+for any new kernel headers that are installed.
+
+The dkms package recommends the linux-headers package needed to build
+modules for the current distribution kernel. If this for whatever reason
+does not work or you are using a non-distribution kernel please make sure
+the right set of kernel headers is installed.
+
+The SPL module is needed to build and run the the ZFS kernel module.
+
+ -- Carlos Alberto Lopez Perez <clopez@igalia.com>  Tue, 11 Dec 2012 21:21:21 +0100

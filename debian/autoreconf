@@ -1,0 +1,2 @@
+# This tricks dh_autoreconf in doing a recursive scan
+.

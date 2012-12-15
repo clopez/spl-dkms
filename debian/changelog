@@ -1,0 +1,5 @@
+spl-dkms (0.6.0~rc12-1) UNRELEASED; urgency=low
+
+  * Initial release. (Closes: #686453)
+
+ -- Carlos Alberto Lopez Perez <clopez@igalia.com>  Sat, 15 Dec 2012 16:33:13 +0100

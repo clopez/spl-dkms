@@ -1,0 +1,63 @@
+#!/bin/sh -e
+# This postinst helper will write our current hostid permanently on /etc/hostid
+#
+# The hostname and hostid of the last system to access a ZFS pool are stored in
+# the ZFS pool itself.  A pool is foreign if, during `zpool import`, the
+# current hostname and hostid are different than the stored values thereof.
+#
+# The hostid on Solaris is intrinsic, but its not on Linux, so the spl kernel
+# module invokes /bin/hostname and /usr/bin/hostid from the userland in its
+# initialization routine.
+#
+# The behavior of /usr/bin/hostid on Linux systems with the regular eglibc and
+# coreutils is:
+#
+#	if ((exists /etc/hostid) && (sizeof(/etc/hostid) >= 4 bytes) {
+#		hostid = read_value(/etc/hostid);
+#	else {
+#  		if ((defined(hostname) && defined(ipaddress)) {
+#			hostid = genvalue(hostname,ipaddress);
+#		else
+#			hostid = genvalue(random);
+#		}
+#	}
+#
+# The hostid 0xffffffff is considered invalid by SPL/ZFS.
+#
+# Given this, the only way of ensuring that we have a permanent valid hostid
+# is writing it on /etc/hostid
+#
+
+HOSTID=$(hostid)
+
+if [ ! -f /etc/hostid ]; then
+	# Write our current hostid to /etc/hostid
+
+	AA=$(echo $HOSTID | cut -b 1,2)
+	BB=$(echo $HOSTID | cut -b 3,4)
+	CC=$(echo $HOSTID | cut -b 5,6)
+	DD=$(echo $HOSTID | cut -b 7,8)
+
+	# Big Endian
+	if echo | gcc -E -dM - | grep -q "__BYTE_ORDER__.*__ORDER_BIG_ENDIAN__"; then
+		# Invoke the external printf. shell builtin lacks the byte format.
+		"$(which printf)" "\x$AA\x$BB\x$CC\x$DD" >/etc/hostid
+	else
+	# Little Endian
+		"$(which printf)" "\x$DD\x$CC\x$BB\x$AA" >/etc/hostid
+	fi
+fi
+
+# Reached this point hostid is stable. Now check that is valid
+
+if [ "0x$(hostid)" = "0xffffffff" ]; then
+	# Hostid is invalid. We must reset it.
+	# We write the first byte something other than FF and the other 3
+	# random bytes.
+	# I know the probabilites of getting from random 4 FF are remote...
+	# but better ensure.
+	dd if=/dev/zero    bs=1 count=1        of=/etc/hostid 2>/dev/null
+	dd if=/dev/urandom bs=1 count=3 seek=1 of=/etc/hostid 2>/dev/null
+fi
+
+#DEBHELPER#
